@@ -62,11 +62,6 @@ kpackagetool6 -t Plasma/Applet -i launchwell-x.y.z.plasmoid
 systemctl --user restart plasma-plasmashell
 ```
 
-### Open it with the Meta (Windows) key
-
-Right-click Launchwell → **Configure Launchwell…** → **Keyboard Shortcuts** and
-set a shortcut (for example Alt+F1). Once it has one, the Meta key opens it too.
-
 ## Update
 
 Download the new `.plasmoid` and run:
