@@ -117,13 +117,6 @@ cd launchwell
 
 The widget itself is plain QML in `package/`, with no compiling needed.
 
-### Making a release
-
-1. Bump `Version` in `package/metadata.json` **and** `version` in
-   `package/contents/ui/tools.js` (`build.sh` checks they match).
-2. Commit, then tag and push: `git tag v1.2.0 && git push --tags`
-3. GitHub Actions builds the `.plasmoid` and attaches it to a new release.
-
 ## Licence
 
 - Launchwell is released under the **GNU General Public License v2.0 or later**
