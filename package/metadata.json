@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Launchwell"
+            }
+        ],
+        "Category": "Application Launchers",
+        "Description": "Kickoff-style launcher with colour icons, a centred popup and lots of tweakable options",
+        "Icon": "start-here-kde",
+        "Id": "org.launchwell.launcher",
+        "License": "GPL-2.0+",
+        "Name": "Launchwell",
+        "Version": "1.1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.launchermenu"
+    ]
+}

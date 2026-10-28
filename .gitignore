@@ -1,0 +1,3 @@
+# Built packages (made by build.sh / GitHub releases)
+dist/
+*.plasmoid

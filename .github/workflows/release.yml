@@ -1,0 +1,33 @@
+# Push a tag like v1.1.0 and this builds the .plasmoid and attaches it
+# to a GitHub release, ready for people to download.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the widget version
+        run: |
+          version=$(python3 -c 'import json;print(json.load(open("package/metadata.json"))["KPlugin"]["Version"])')
+          if [ "v$version" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match metadata.json version $version"
+            exit 1
+          fi
+
+      - name: Build the .plasmoid
+        run: ./build.sh
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.plasmoid
+          generate_release_notes: true
