@@ -79,4 +79,18 @@ MouseArea {
             Layout.rightMargin: Kirigami.Units.smallSpacing
         }
     }
+
+    // Small dot when a Launchwell update is available
+    Rectangle {
+        visible: button.lw.updateAvailable
+        width: Math.max(6, Math.round(button.thickness / 5))
+        height: width
+        radius: width / 2
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: Math.round(button.thickness / 10)
+        color: Kirigami.Theme.positiveTextColor
+        border.width: 1
+        border.color: Kirigami.Theme.backgroundColor
+    }
 }

@@ -84,6 +84,10 @@ KCM.SimpleKCM {
     property var cfg_settingsPositionDefault
     property var cfg_showSettingsButton
     property var cfg_showSettingsButtonDefault
+    property var cfg_checkUpdates
+    property var cfg_checkUpdatesDefault
+    property var cfg_skippedVersion
+    property var cfg_skippedVersionDefault
     property var cfg_categoryIconsDefault
     property var cfg_favouritesSeeded
     property var cfg_favouritesSeededDefault
@@ -147,6 +151,8 @@ KCM.SimpleKCM {
     property var cfg_windowType
     property var cfg_windowTypeDefault
     // --- end
+
+
 
 
 

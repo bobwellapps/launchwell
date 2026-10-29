@@ -35,7 +35,7 @@ FocusScope {
     readonly property bool settingsShown: cfg.showSettingsButton
     readonly property bool headerVisible: searchInHeader || showUserInfo
                                           || (powerShown && powerPos === 3) || (settingsShown && settingsPos === 2)
-    readonly property bool footerVisible: searchPos >= 2
+    readonly property bool footerVisible: lw.updateAvailable || searchPos >= 2
                                           || (powerShown && powerPos <= 2) || (settingsShown && settingsPos <= 1)
     readonly property bool searching: searchField.text.length > 0
     readonly property var powerList: Tools.toArray(cfg.powerButtons)
@@ -656,6 +656,22 @@ FocusScope {
                 Layout.preferredWidth: settingsButton.implicitWidth
                 Layout.preferredHeight: settingsButton.implicitHeight
             }
+            // "Update available" button, when a newer release is out
+            PC3.ToolButton {
+                id: updateButton
+                visible: content.lw.updateAvailable
+                icon.name: "system-software-update"
+                text: i18n("Update %1", content.lw.updateVersion)
+                PC3.ToolTip.text: i18n("Launchwell %1 is available. Click to open the download page; right-click for options.", content.lw.updateVersion)
+                PC3.ToolTip.visible: hovered
+                PC3.ToolTip.delay: Kirigami.Units.toolTipDelay
+                onClicked: content.lw.openUpdatePage()
+                TapHandler {
+                    acceptedButtons: Qt.RightButton
+                    onTapped: updateMenu.popup(updateButton, updateButton.width / 2, updateButton.height / 2)
+                }
+            }
+
             Item {
                 id: footerPowerLeft
                 visible: content.powerShown && content.powerPos === 1
@@ -821,6 +837,20 @@ FocusScope {
             }
             onObjectAdded: (index, object) => itemMenu.insertItem(index, object)
             onObjectRemoved: (index, object) => itemMenu.removeItem(object)
+        }
+    }
+
+    PC3.Menu {
+        id: updateMenu
+        PC3.MenuItem {
+            text: i18n("Open download page")
+            icon.name: "internet-services"
+            onTriggered: content.lw.openUpdatePage()
+        }
+        PC3.MenuItem {
+            text: i18n("Skip this version")
+            icon.name: "dialog-cancel"
+            onTriggered: content.cfg.skippedVersion = content.lw.updateVersion
         }
     }
 

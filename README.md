@@ -1,5 +1,3 @@
-
-
 # Launchwell
 
 **A Kickoff-style application launcher for KDE Plasma 6, with colour icons back and lots to tweak.**
@@ -9,8 +7,6 @@ brings back the full-colour category icons from Plasma 5, keeps the familiar
 layout (search on top, categories down the side, apps on the right, power
 buttons along the bottom) and lets you rearrange and restyle almost all of it.
 
-<img width="1920" height="1080" alt="currentscreen" src="https://github.com/user-attachments/assets/1a344cec-d89c-4b90-8214-42ce35d6e4ff" />
-<img width="1920" height="1080" alt="current2" src="https://github.com/user-attachments/assets/eb7c1f10-8c5a-4fe3-a2f0-d8947049a455" />
 ## Features
 
 **Icons**
@@ -52,7 +48,7 @@ buttons along the bottom) and lets you rearrange and restyle almost all of it.
 ### Easiest: from a downloaded file
 
 1. Download the latest `launchwell-x.y.z.plasmoid` from the
-   [Releases](../../releases) page.
+   [Releases](https://github.com/bobwellapps/launchwell/releases) page.
 2. Right-click your panel → **Add or Manage Widgets…** → **Get New** →
    **Install Widget From Local File…** and choose the file.
 3. Put it on your panel: right-click your current launcher →
@@ -66,6 +62,11 @@ kpackagetool6 -t Plasma/Applet -i launchwell-x.y.z.plasmoid
 systemctl --user restart plasma-plasmashell
 ```
 
+### Open it with the Meta (Windows) key
+
+Right-click Launchwell → **Configure Launchwell…** → **Keyboard Shortcuts** and
+set a shortcut (for example Alt+F1). Once it has one, the Meta key opens it too.
+
 ## Update
 
 Download the new `.plasmoid` and run:
@@ -77,6 +78,17 @@ systemctl --user restart plasma-plasmashell
 
 (Plasma's "Install From Local File" won't install over an existing copy, so
 either use the command above or remove the old version first.)
+
+### Update notifications
+
+- **Installed from the KDE Store / Get New Widgets:** updates show up in
+  **Discover** and in Get New Widgets as usual.
+- **Installed from a GitHub download:** Launchwell checks this repository's
+  releases once a day. When there's a newer version, an **Update** button
+  appears in the menu's footer and a small dot appears on the panel button.
+  Click it to open the download page; right-click it to skip that version.
+  Nothing is downloaded or installed automatically. Turn it off under
+  Configure → General → Updates.
 
 ## Uninstall
 
@@ -109,13 +121,22 @@ in the menu:
 ## Building from source
 
 ```bash
-git clone <this repository>
+git clone https://github.com/bobwellapps/launchwell.git
 cd launchwell
 ./build.sh          # makes dist/launchwell-<version>.plasmoid
 ./install.sh        # or install/update straight from the source folder
 ```
 
 The widget itself is plain QML in `package/`, with no compiling needed.
+
+### Making a release
+
+1. Bump `Version` in `package/metadata.json` **and** `version` in
+   `package/contents/ui/tools.js` (`build.sh` checks they match).
+   The update check compares these numbers, so always raise them.
+   (`updateRepo` in the same `tools.js` file is the `owner/repo` it checks.)
+2. Commit, then tag and push: `git tag v1.2.0 && git push --tags`
+3. GitHub Actions builds the `.plasmoid` and attaches it to a new release.
 
 ## Licence
 

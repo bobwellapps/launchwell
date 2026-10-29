@@ -33,6 +33,8 @@ KCM.SimpleKCM {
     property alias cfg_showPowerBar: showPower.checked
     property alias cfg_powerButtonText: powerText.checked
     property alias cfg_showSettingsButton: settingsBtn.checked
+    property alias cfg_checkUpdates: checkUpdates.checked
+    property string cfg_skippedVersion: ""
     property alias cfg_powerPosition: powerPos.currentIndex
     property alias cfg_settingsPosition: settingsPos.currentIndex
     property var cfg_powerButtons: []
@@ -66,6 +68,8 @@ KCM.SimpleKCM {
     property var cfg_powerPositionDefault
     property var cfg_settingsPositionDefault
     property var cfg_showSettingsButtonDefault
+    property var cfg_checkUpdatesDefault
+    property var cfg_skippedVersionDefault
     property var cfg_categoryIcons
     property var cfg_categoryIconsDefault
     property var cfg_favouritesSeeded
@@ -147,6 +151,8 @@ KCM.SimpleKCM {
     property var cfg_windowType
     property var cfg_windowTypeDefault
     // --- end
+
+
 
 
 
@@ -340,6 +346,31 @@ KCM.SimpleKCM {
                     }
                 }
             }
+        }
+
+        // ------------------------------------------------ updates
+        Item { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Updates") }
+
+        QQC2.CheckBox {
+            id: checkUpdates
+            Kirigami.FormData.label: i18n("New versions:")
+            text: i18n("Tell me when a new version of Launchwell is out")
+            enabled: Tools.updateRepo.length > 0
+        }
+        QQC2.Label {
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: Tools.updateRepo.length > 0
+                  ? i18n("Checks github.com/%1 once a day and shows an Update button in the menu when there's a newer release. Nothing is downloaded or installed automatically. You're running version %2.", Tools.updateRepo, Tools.version)
+                  : i18n("This copy of Launchwell has no update address set. You're running version %1.", Tools.version)
+        }
+        QQC2.Button {
+            visible: page.cfg_skippedVersion.length > 0
+            text: i18n("Stop skipping version %1", page.cfg_skippedVersion)
+            icon.name: "edit-undo"
+            onClicked: page.cfg_skippedVersion = ""
         }
     }
 }

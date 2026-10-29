@@ -35,13 +35,59 @@ Item {
     readonly property real maxW: Math.max(400, lw.screenRect.width - 2 * cfg.verticalGap)
     readonly property real maxH: Math.max(320, lw.screenRect.height - 2 * cfg.verticalGap)
 
+    // KWin does the resizing (smooth, one step per frame) when it can; the
+    // hand-made fallback below is only used if the system refuses.
+    property bool systemResizing: false
+    property bool sawSizeChange: false
+
+    Connections {
+        target: handles.menu
+        function onWidthChanged() { handles.noteSystemResize(); }
+        function onHeightChanged() { handles.noteSystemResize(); }
+    }
+    function noteSystemResize() {
+        if (systemResizing) {
+            sawSizeChange = true;
+            settleTimer.restart();
+        }
+    }
+    // While KWin resizes, the menu gets no mouse events; the first one after
+    // means the drag is over. The timer is a backup for when none arrives.
+    HoverHandler {
+        enabled: handles.systemResizing && handles.sawSizeChange
+        onPointChanged: handles.finishSystemResize()
+    }
+    Timer {
+        id: settleTimer
+        interval: 900
+        onTriggered: handles.finishSystemResize()
+    }
+    function finishSystemResize() {
+        if (!systemResizing) {
+            return;
+        }
+        systemResizing = false;
+        settleTimer.stop();
+        if (sawSizeChange) {
+            cfg.menuWidth = Math.round(menu.width);
+            cfg.menuHeight = Math.round(menu.height);
+            lw.positionMenu();          // re-centre / re-pin to the taskbar
+        }
+        sawSizeChange = false;
+        sizeLabelTimer.restart();
+    }
+
     component Grip: MouseArea {
         id: g
         property int sx: 0          // -1 left edge, 1 right edge
         property int sy: 0          // -1 top edge, 1 bottom edge
+        property bool manual: false
         property point start
         property real startW
         property real startH
+        property point pending
+        readonly property int edges: (sx < 0 ? Qt.LeftEdge : sx > 0 ? Qt.RightEdge : 0)
+                                     | (sy < 0 ? Qt.TopEdge : sy > 0 ? Qt.BottomEdge : 0)
 
         hoverEnabled: true
         preventStealing: true
@@ -49,6 +95,15 @@ Item {
                    : sx !== 0 ? Qt.SizeHorCursor : Qt.SizeVerCursor
 
         onPressed: (m) => {
+            if (handles.lw.startSystemResize(edges)) {
+                manual = false;
+                handles.sawSizeChange = false;
+                handles.systemResizing = true;
+                settleTimer.restart();
+                return;
+            }
+            // Fallback: resize by hand, at most once per frame
+            manual = true;
             start = mapToGlobal(m.x, m.y);
             startW = handles.menu.baseW;
             startH = handles.menu.baseH;
@@ -56,20 +111,30 @@ Item {
             handles.menu.dragH = startH;
         }
         onPositionChanged: (m) => {
-            if (!pressed) {
+            if (!pressed || !manual) {
                 return;
             }
-            const p = mapToGlobal(m.x, m.y);
-            if (sx !== 0) {
-                handles.menu.dragW = Math.round(Tools.clamp(startW + sx * (p.x - start.x) * handles.hFactor, 360, handles.maxW));
+            pending = mapToGlobal(m.x, m.y);
+            if (!frameTimer.running) {
+                frameTimer.start();
             }
-            if (sy !== 0) {
-                handles.menu.dragH = Math.round(Tools.clamp(startH + sy * (p.y - start.y) * handles.vFactor, 300, handles.maxH));
-            }
-            handles.lw.positionMenu();
         }
-        onReleased: handles.commit()
-        onCanceled: handles.commit()
+        Timer {
+            id: frameTimer
+            interval: 33
+            onTriggered: {
+                const p = g.pending;
+                if (g.sx !== 0) {
+                    handles.menu.dragW = Math.round(Tools.clamp(g.startW + g.sx * (p.x - g.start.x) * handles.hFactor, 360, handles.maxW));
+                }
+                if (g.sy !== 0) {
+                    handles.menu.dragH = Math.round(Tools.clamp(g.startH + g.sy * (p.y - g.start.y) * handles.vFactor, 300, handles.maxH));
+                }
+                handles.lw.positionMenu();
+            }
+        }
+        onReleased: if (manual) { frameTimer.stop(); frameTimer.triggered(); handles.commit(); }
+        onCanceled: if (manual) { frameTimer.stop(); handles.commit(); }
     }
 
     function commit() {
@@ -100,7 +165,7 @@ Item {
     }
     Rectangle {
         anchors.centerIn: parent
-        visible: handles.menu.dragW > 0 || sizeLabelTimer.running
+        visible: handles.menu.dragW > 0 || handles.systemResizing || sizeLabelTimer.running
         width: sizeText.implicitWidth + 24
         height: sizeText.implicitHeight + 12
         radius: height / 2
@@ -110,7 +175,7 @@ Item {
             anchors.centerIn: parent
             color: "white"
             font.bold: true
-            text: Math.round(handles.menu.baseW) + " × " + Math.round(handles.menu.baseH)
+            text: Math.round(handles.menu.width) + " × " + Math.round(handles.menu.height)
         }
     }
 }

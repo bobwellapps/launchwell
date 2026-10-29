@@ -1,6 +1,6 @@
 .pragma library
 
-const version = "1.1.0";
+const version = "1.2.0";
 
 // Turn a QStringList / QVariantList (or anything array-like) into a plain JS array.
 function toArray(v) {
@@ -83,4 +83,42 @@ function classicIcon(name) {
 // Plain icon name (not a path/URL)?
 function isIconName(src) {
     return typeof src === "string" && src.length > 0 && !/[\/:]/.test(src);
+}
+
+// Letter used for the A-Z headings: case and accents ignored, numbers -> "#",
+// symbols/punctuation -> "&" (same groups Plasma's app list sorts by).
+function letterFor(text) {
+    let t = String(text || "").trim();
+    if (t.length === 0) {
+        return "&";
+    }
+    let c = t.charAt(0);
+    if (typeof c.normalize === "function") {
+        c = c.normalize("NFD").replace(/[̀-ͯ]/g, "") || c;
+    }
+    if (/[0-9]/.test(c)) {
+        return "#";
+    }
+    const up = c.toUpperCase();
+    if (up === c.toLowerCase()) {
+        return "&";                 // not a letter
+    }
+    return up;
+}
+
+// ---- update check
+// GitHub "owner/repo" that releases are published to. Empty = never check.
+const updateRepo = "bobwellapps/launchwell";
+
+// True when version string a (e.g. "1.2.0" or "v1.2.0") is newer than b.
+function isNewer(a, b) {
+    const pa = String(a).replace(/^v/i, "").split(/[.-]/).map(n => parseInt(n, 10) || 0);
+    const pb = String(b).replace(/^v/i, "").split(/[.-]/).map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(pa.length, pb.length); ++i) {
+        const x = pa[i] || 0, y = pb[i] || 0;
+        if (x !== y) {
+            return x > y;
+        }
+    }
+    return false;
 }

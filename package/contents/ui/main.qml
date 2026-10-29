@@ -103,6 +103,82 @@ PlasmoidItem {
         rootModel.refresh();
     }
 
+    // ---------------------------------------------------------------- update check
+    // Once a day, ask GitHub for the newest release. Only reads public
+    // release info; never downloads or installs anything by itself.
+    property string updateVersion: ""
+    property string updateUrl: ""
+    readonly property bool canCheckUpdates: cfg.checkUpdates && Tools.updateRepo.length > 0
+    readonly property bool updateAvailable: canCheckUpdates && updateVersion.length > 0
+                                            && updateVersion !== cfg.skippedVersion
+
+    Timer {
+        // first check a minute after login, so it doesn't slow start-up
+        interval: 60 * 1000
+        running: launcher.canCheckUpdates
+        onTriggered: launcher.checkForUpdates()
+    }
+    Timer {
+        interval: 24 * 60 * 60 * 1000
+        repeat: true
+        running: launcher.canCheckUpdates
+        onTriggered: launcher.checkForUpdates()
+    }
+
+    function checkForUpdates() {
+        if (!canCheckUpdates) {
+            return;
+        }
+        const repo = Tools.updateRepo;
+        fetchJson("https://api.github.com/repos/" + repo + "/releases/latest", (j) => {
+            if (j && j.tag_name) {
+                gotLatest(j.tag_name, j.html_url || ("https://github.com/" + repo + "/releases/latest"));
+                return;
+            }
+            // No release found (or the API said no): read the version on the main branch
+            fetchJson("https://raw.githubusercontent.com/" + repo + "/HEAD/package/metadata.json", (m) => {
+                if (m && m.KPlugin && m.KPlugin.Version) {
+                    gotLatest(m.KPlugin.Version, "https://github.com/" + repo + "/releases");
+                }
+            });
+        });
+    }
+    function gotLatest(version, url) {
+        const v = String(version).replace(/^v/i, "");
+        if (Tools.isNewer(v, Tools.version)) {
+            updateVersion = v;
+            updateUrl = url;
+        } else {
+            updateVersion = "";
+        }
+    }
+    function fetchJson(url, done) {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE) {
+                return;
+            }
+            let data = null;
+            if (xhr.status === 200) {
+                try {
+                    data = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    data = null;
+                }
+            }
+            done(data);
+        };
+        xhr.open("GET", url);
+        xhr.setRequestHeader("Accept", "application/vnd.github+json");
+        xhr.send();
+    }
+    function openUpdatePage() {
+        if (updateUrl) {
+            Qt.openUrlExternally(updateUrl);
+            closeMenuAfterLaunch();
+        }
+    }
+
     // ---------------------------------------------------------------- open / close
 
     Connections {
@@ -134,6 +210,18 @@ PlasmoidItem {
         menuContent.focusSearch();
         menuContent.playOpen();
         Qt.callLater(positionMenu);
+    }
+
+    // Hand an edge drag to the window manager (smooth resizing). False if unsupported.
+    function startSystemResize(edges) {
+        if (!menuDialog.visible || typeof menuDialog.startSystemResize !== "function") {
+            return false;
+        }
+        try {
+            return menuDialog.startSystemResize(edges);
+        } catch (e) {
+            return false;
+        }
     }
 
     function closeMenu() {

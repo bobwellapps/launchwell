@@ -40,6 +40,10 @@
     <entry name="settingsPosition" type="Int"><default>0</default></entry>  <!-- 0 footer left, 1 footer right, 2 top bar, 3 under categories -->
     <entry name="showSettingsButton" type="Bool"><default>true</default></entry>
 
+    <!-- Updates -->
+    <entry name="checkUpdates" type="Bool"><default>true</default></entry>
+    <entry name="skippedVersion" type="String"><default></default></entry>
+
     <!-- Internal -->
     <entry name="categoryIcons" type="StringList"><default></default></entry>
     <entry name="favouritesSeeded" type="Bool"><default>false</default></entry>

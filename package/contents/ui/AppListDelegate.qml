@@ -15,9 +15,50 @@ Item {
     readonly property real textScale: Math.max(50, cfg.textScale) / 100
     readonly property string titleText: model.display || ""
     readonly property string descText: model.description || ""
+    // Letter heading shown above this row ("" = none)
+    property string heading: ""
+    readonly property real headingHeight: heading.length > 0 ? headingLabel.implicitHeight + Kirigami.Units.smallSpacing * 2 : 0
+    readonly property real rowHeight: Math.max(cfg.appIconSize, textCol.implicitHeight) + Kirigami.Units.smallSpacing * 2 + cfg.rowSpacing * 2
 
-    implicitHeight: Math.max(cfg.appIconSize, textCol.implicitHeight) + Kirigami.Units.smallSpacing * 2 + cfg.rowSpacing * 2
+    implicitHeight: headingHeight + rowHeight
     height: implicitHeight
+
+    // ---- letter heading (click to jump to another letter)
+    Item {
+        id: headingArea
+        width: parent.width
+        height: del.headingHeight
+        visible: del.heading.length > 0
+        Rectangle {
+            anchors.fill: parent
+            radius: Kirigami.Units.smallSpacing
+            color: Kirigami.Theme.highlightColor
+            opacity: headingMouse.containsMouse ? 0.12 : 0
+        }
+        PC3.Label {
+            id: headingLabel
+            anchors.verticalCenter: parent.verticalCenter
+            x: Kirigami.Units.largeSpacing
+            text: del.heading
+            font.bold: true
+            opacity: headingMouse.containsMouse ? 1 : 0.6
+        }
+        MouseArea {
+            id: headingMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: if (del.owner) del.owner.openLetterPicker()
+        }
+    }
+
+    // ---- the app row itself
+    Item {
+        id: rowArea
+        y: del.headingHeight
+        width: parent.width
+        height: del.rowHeight
+    }
 
     function openMenu(x, y) {
         owner.contextMenuRequested(index, model, del,
@@ -26,7 +67,7 @@ Item {
     }
 
     Rectangle {
-        anchors.fill: parent
+        anchors.fill: rowArea
         anchors.margins: 1
         radius: Kirigami.Units.smallSpacing
         color: Kirigami.Theme.highlightColor
@@ -38,7 +79,7 @@ Item {
     }
 
     RowLayout {
-        anchors.fill: parent
+        anchors.fill: rowArea
         anchors.leftMargin: Kirigami.Units.largeSpacing
         anchors.rightMargin: Kirigami.Units.largeSpacing
         spacing: Kirigami.Units.largeSpacing
@@ -80,7 +121,7 @@ Item {
 
     MouseArea {
         id: mouse
-        anchors.fill: parent
+        anchors.fill: rowArea
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onContainsMouseChanged: {

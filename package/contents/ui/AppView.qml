@@ -4,6 +4,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.components as PC3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
+import "tools.js" as Tools
 
 // A list or grid of launchable items (apps, favourites or search results).
 FocusScope {
@@ -69,8 +70,18 @@ FocusScope {
     property var letters: []
 
     function letterOf(row) {
-        const t = String(model.data(model.index(row, 0), Qt.DisplayRole) || "");
-        return t.length > 0 ? t.charAt(0).toUpperCase() : "#";
+        return Tools.letterFor(model.data(model.index(row, 0), Qt.DisplayRole));
+    }
+    // Heading to show above a row: its letter when it differs from the row above.
+    // (Drawn by the row itself: Qt's built-in section headings show stale
+    // letters when they get reused while scrolling.)
+    function headingFor(row) {
+        void count;
+        if (!showSections || !model || row < 0 || row >= count) {
+            return "";
+        }
+        const c = letterOf(row);
+        return (row === 0 || letterOf(row - 1) !== c) ? c : "";
     }
     function openLetterPicker() {
         if (!model || count === 0) {
@@ -93,8 +104,6 @@ FocusScope {
             if (letterOf(i) === c) {
                 view.currentIndex = i;
                 view.positionViewAtIndex(i, ListView.Beginning);
-                // show the letter heading above the first app too
-                view.contentY = Math.max(view.originY, view.contentY - Kirigami.Units.gridUnit * 1.5);
                 view.forceActiveFocus();
                 return;
             }
@@ -199,40 +208,10 @@ FocusScope {
                 }
             }
 
-            section.property: appView.showSections ? "display" : ""
-            section.criteria: ViewSection.FirstCharacter
-            section.delegate: Item {
-                id: sectionItem
-                required property string section
-                width: list.rowWidth
-                height: sectionLabel.implicitHeight + Kirigami.Units.smallSpacing * 2
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Kirigami.Units.smallSpacing
-                    color: Kirigami.Theme.highlightColor
-                    opacity: sectionMouse.containsMouse ? 0.12 : 0
-                }
-                PC3.Label {
-                    id: sectionLabel
-                    anchors.verticalCenter: parent.verticalCenter
-                    x: Kirigami.Units.largeSpacing
-                    text: sectionItem.section.toUpperCase()
-                    font.bold: true
-                    opacity: sectionMouse.containsMouse ? 1 : 0.6
-                }
-                // Click a letter to pick another letter to jump to
-                MouseArea {
-                    id: sectionMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: appView.openLetterPicker()
-                }
-            }
-
             delegate: AppListDelegate {
                 owner: appView
                 width: list.rowWidth
+                heading: appView.headingFor(index)
             }
 
             Keys.onReturnPressed: appView.trigger(currentIndex)
