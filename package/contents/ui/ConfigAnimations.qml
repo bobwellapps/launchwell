@@ -138,6 +138,8 @@ KCM.SimpleKCM {
     property var cfg_menuHeightDefault
     property var cfg_dragResize
     property var cfg_dragResizeDefault
+    property var cfg_liveCentring
+    property var cfg_liveCentringDefault
     property var cfg_horizontalPosition
     property var cfg_horizontalPositionDefault
     property var cfg_horizontalOffset
@@ -153,6 +155,8 @@ KCM.SimpleKCM {
     property var cfg_windowType
     property var cfg_windowTypeDefault
     // --- end
+
+
 
 
 

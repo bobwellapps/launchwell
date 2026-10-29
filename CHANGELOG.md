@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2
+
+- Fixed: dragging a side of the menu to resize it no longer flickers. The edge you drag moves smoothly, then a centred menu glides back to the centre when you let go
+- New: option to keep a centred menu centred while dragging (Position & Size; off by default, as it can flicker)
+
 ## 1.1.1
 
 - New: update notifications for GitHub installs. An Update button in the menu and a dot on the panel button when a newer release is out (can be turned off)

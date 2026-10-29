@@ -295,7 +295,8 @@ PlasmoidItem {
 
     // ---------------------------------------------------------------- positioning
 
-    function positionMenu() {
+    // Where the menu should be, for its current size
+    function menuTargetPosition() {
         const m = menuDialog.margins;
         const W = menuContent.width + (m ? m.left + m.right : 0);
         const H = menuContent.height + (m ? m.top + m.bottom : 0);
@@ -356,15 +357,45 @@ PlasmoidItem {
             x = Tools.clamp(x, scr.x, scr.x + scr.width - W);
             y = Tools.clamp(y, scr.y, scr.y + scr.height - H);
         }
-        menuDialog.x = Math.round(x);
-        menuDialog.y = Math.round(y);
+        return Qt.point(Math.round(x), Math.round(y));
+    }
+
+    function positionMenu() {
+        glideAnim.stop();
+        const p = menuTargetPosition();
+        menuDialog.x = p.x;
+        menuDialog.y = p.y;
+    }
+
+    // Slide (move only, no resizing, so no flicker) to where the menu belongs.
+    // Used after an edge drag, to re-centre a menu that grew on one side.
+    function glideToPosition() {
+        const p = menuTargetPosition();
+        if (p.x === menuDialog.x && p.y === menuDialog.y) {
+            return;
+        }
+        if (Kirigami.Units.longDuration <= 1) {
+            positionMenu();
+            return;
+        }
+        glideAnim.stop();
+        glideX.from = menuDialog.x;
+        glideX.to = p.x;
+        glideY.from = menuDialog.y;
+        glideY.to = p.y;
+        glideAnim.start();
+    }
+    ParallelAnimation {
+        id: glideAnim
+        NumberAnimation { id: glideX; target: menuDialog; property: "x"; duration: 160; easing.type: Easing.OutCubic }
+        NumberAnimation { id: glideY; target: menuDialog; property: "y"; duration: 160; easing.type: Easing.OutCubic }
     }
 
     // Re-place the menu live if size/position settings change while it is open.
     readonly property string positionKey: [cfg.menuWidth, cfg.menuHeight, cfg.horizontalPosition,
         cfg.horizontalOffset, cfg.verticalPosition, cfg.verticalGap, cfg.verticalOffset,
         cfg.keepOnScreen, cfg.backgroundStyle].join(",")
-    onPositionKeyChanged: if (menuDialog.visible) Qt.callLater(positionMenu)
+    onPositionKeyChanged: if (menuDialog.visible) Qt.callLater(glideToPosition)
 
     // ---------------------------------------------------------------- the popup
 

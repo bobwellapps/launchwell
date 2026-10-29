@@ -13,7 +13,7 @@
         "Id": "org.launchwell.launcher",
         "License": "GPL-2.0+",
         "Name": "Launchwell",
-        "Version": "1.1.1",
+        "Version": "1.1.2",
         "Website": "https://github.com/bobwellapps/launchwell"
     },
     "X-Plasma-API-Minimum-Version": "6.0",

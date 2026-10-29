@@ -55,15 +55,23 @@ Item {
             settleTimer.restart();
         }
     }
-    // While KWin resizes, the menu gets no mouse events; the first one after
-    // means the drag is over. The timer is a backup for when none arrives.
+    // While KWin resizes, the menu gets no real mouse events; the first one
+    // after means the drag is over. Resizing makes Qt send "pretend" hover
+    // events too, but those repeat the press position, so only a pointer that
+    // reports a new position counts. The timer is a backup.
+    property point pressScenePos
     HoverHandler {
         enabled: handles.systemResizing && handles.sawSizeChange
-        onPointChanged: handles.finishSystemResize()
+        onPointChanged: {
+            const p = point.scenePosition;
+            if (Math.abs(p.x - handles.pressScenePos.x) > 2 || Math.abs(p.y - handles.pressScenePos.y) > 2) {
+                handles.finishSystemResize();
+            }
+        }
     }
     Timer {
         id: settleTimer
-        interval: 900
+        interval: 1500
         onTriggered: handles.finishSystemResize()
     }
     function finishSystemResize() {
@@ -75,7 +83,7 @@ Item {
         if (sawSizeChange) {
             cfg.menuWidth = Math.round(menu.width);
             cfg.menuHeight = Math.round(menu.height);
-            lw.positionMenu();          // re-centre / re-pin to the taskbar
+            lw.glideToPosition();       // slide back to centre / re-pin to the taskbar
         }
         sawSizeChange = false;
         sizeLabelTimer.restart();
@@ -148,8 +156,11 @@ Item {
         property bool hasPending: false
         readonly property int edges: (sx < 0 ? Qt.LeftEdge : sx > 0 ? Qt.RightEdge : 0)
                                      | (sy < 0 ? Qt.TopEdge : sy > 0 ? Qt.BottomEdge : 0)
-        // Centred directions must grow on both sides at once
-        readonly property bool needsSymmetric: (sx !== 0 && handles.hFactor === 2) || (sy !== 0 && handles.vFactor === 2)
+        // Live centring (optional): centred directions grow on both sides while
+        // dragging. Off by default: on Wayland it can't be fully flicker-free,
+        // so normally the window manager resizes and the menu glides back after.
+        readonly property bool needsSymmetric: handles.cfg.liveCentring
+                                               && ((sx !== 0 && handles.hFactor === 2) || (sy !== 0 && handles.vFactor === 2))
 
         hoverEnabled: true
         preventStealing: true
@@ -161,9 +172,13 @@ Item {
             // taskbar): let the window manager do it - perfectly smooth.
             if (!needsSymmetric && handles.lw.startSystemResize(edges)) {
                 manual = false;
+                handles.pressScenePos = mapToItem(null, m.x, m.y);
                 handles.sawSizeChange = false;
                 handles.systemResizing = true;
                 settleTimer.restart();
+                // The window manager owns the drag now; don't keep hold of the
+                // mouse, so the first event after letting go reaches us.
+                m.accepted = false;
                 return;
             }
             manual = true;

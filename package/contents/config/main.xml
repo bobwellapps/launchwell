@@ -89,6 +89,7 @@
     <entry name="menuWidth" type="Int"><default>650</default></entry>
     <entry name="menuHeight" type="Int"><default>560</default></entry>
     <entry name="dragResize" type="Bool"><default>true</default></entry>
+    <entry name="liveCentring" type="Bool"><default>false</default></entry>
     <entry name="horizontalPosition" type="Int"><default>0</default></entry>  <!-- 0 screen centre, 1 at button, 2 left, 3 right -->
     <entry name="horizontalOffset" type="Int"><default>0</default></entry>
     <entry name="verticalPosition" type="Int"><default>0</default></entry>    <!-- 0 next to panel, 1 screen centre, 2 top of screen -->

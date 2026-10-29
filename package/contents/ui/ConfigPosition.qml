@@ -14,6 +14,7 @@ KCM.SimpleKCM {
     property alias cfg_menuWidth: menuWidth.value
     property alias cfg_menuHeight: menuHeight.value
     property alias cfg_dragResize: dragResize.checked
+    property alias cfg_liveCentring: liveCentring.checked
     property alias cfg_horizontalPosition: hPos.currentIndex
     property alias cfg_horizontalOffset: hOffset.value
     property alias cfg_verticalPosition: vPos.currentIndex
@@ -145,6 +146,7 @@ KCM.SimpleKCM {
     property var cfg_menuWidthDefault
     property var cfg_menuHeightDefault
     property var cfg_dragResizeDefault
+    property var cfg_liveCentringDefault
     property var cfg_horizontalPositionDefault
     property var cfg_horizontalOffsetDefault
     property var cfg_verticalPositionDefault
@@ -153,6 +155,8 @@ KCM.SimpleKCM {
     property var cfg_keepOnScreenDefault
     property var cfg_windowTypeDefault
     // --- end
+
+
 
 
 
@@ -205,6 +209,18 @@ KCM.SimpleKCM {
             font: Kirigami.Theme.smallFont
             opacity: 0.7
             text: i18n("Drag the top, sides or corners of the open menu. The edge against the taskbar stays put. The new size is saved here automatically.")
+        }
+        QQC2.CheckBox {
+            id: liveCentring
+            enabled: dragResize.checked
+            text: i18n("Keep a centred menu centred while dragging")
+        }
+        QQC2.Label {
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Off (recommended): the side you drag moves smoothly, then the menu glides back to the centre when you let go. On: both sides move together while you drag, but this can flicker, because Wayland moves and resizes windows as separate steps.")
         }
 
         // ------------------------------------------------ position
