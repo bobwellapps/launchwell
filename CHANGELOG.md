@@ -1,9 +1,10 @@
 # Changelog
 
-## 1.2.0
+## 1.1.1
 
 - New: update notifications for GitHub installs. An Update button in the menu and a dot on the panel button when a newer release is out (can be turned off)
-- Fixed: resizing by dragging the edges now uses the window manager, so it's smooth instead of flickering and jumping
+- Fixed: resizing by dragging the edges is now smooth instead of flickering and jumping, and a centred menu grows and shrinks on both sides at once
+- New: copyright and disclaimer info, author and website shown in the widget's About page
 - Fixed: A–Z letter headings showed the wrong letters while scrolling; they now always match the apps below them, and accented names (É, Ö…) sit under their plain letter
 
 ## 1.1.0: first public release

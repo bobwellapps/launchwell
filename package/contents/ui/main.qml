@@ -1,4 +1,8 @@
 /*
+ * SPDX-FileCopyrightText: 2026 bobwellapps
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+/*
  * Launchwell - a Kickoff-style application launcher for Plasma 6
  * with colour icons and a freely positioned popup.
  */
@@ -211,6 +215,9 @@ PlasmoidItem {
         menuContent.playOpen();
         Qt.callLater(positionMenu);
     }
+
+    // The menu's window, for things that need its frame timing (resizing)
+    readonly property var menuWindow: menuDialog
 
     // Hand an edge drag to the window manager (smooth resizing). False if unsupported.
     function startSystemResize(edges) {

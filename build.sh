@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 bobwellapps
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Build dist/launchwell-<version>.plasmoid from the package/ folder.
 # A .plasmoid is a zip with metadata.json at the top level; Plasma's
 # "Install Widget From Local File…" and kpackagetool6 both accept it.

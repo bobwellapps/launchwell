@@ -3,16 +3,17 @@
     "KPlugin": {
         "Authors": [
             {
-                "Name": "Launchwell"
+                "Name": "bobwellapps"
             }
         ],
         "Category": "Application Launchers",
+        "Copyright": "Copyright © 2026 bobwellapps",
         "Description": "Kickoff-style launcher with colour icons, a centred popup and lots of tweakable options",
         "Icon": "start-here-kde",
         "Id": "org.launchwell.launcher",
         "License": "GPL-2.0+",
         "Name": "Launchwell",
-        "Version": "1.2.0",
+        "Version": "1.1.1",
         "Website": "https://github.com/bobwellapps/launchwell"
     },
     "X-Plasma-API-Minimum-Version": "6.0",

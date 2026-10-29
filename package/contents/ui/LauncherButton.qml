@@ -1,3 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: 2026 bobwellapps
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Window

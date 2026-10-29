@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 bobwellapps
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Install or update Launchwell straight from this folder (for testing changes).
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"

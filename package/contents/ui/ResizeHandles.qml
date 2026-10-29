@@ -1,3 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: 2026 bobwellapps
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
@@ -77,6 +81,61 @@ Item {
         sizeLabelTimer.restart();
     }
 
+    // ---- Symmetric resizing (centred menu): done by Launchwell, frame-synced.
+    // The window manager's own resize always keeps the opposite edge still, so a
+    // centred menu would grow lopsided. Here the new size is drawn first and the
+    // window is re-centred only once that frame is on screen, so the move and the
+    // resize never arrive out of order (which is what made it flicker before).
+    property var activeGrip: null
+    property bool awaitingFrame: false
+
+    Connections {
+        target: handles.lw.menuWindow
+        function onFrameSwapped() {
+            if (handles.awaitingFrame) {
+                handles.awaitingFrame = false;
+                frameSafety.stop();
+                handles.lw.positionMenu();
+                if (handles.activeGrip && handles.activeGrip.hasPending) {
+                    Qt.callLater(handles.applyPending);
+                }
+            }
+        }
+    }
+    Timer {
+        // in case a frame never comes (e.g. size was clamped and didn't change)
+        id: frameSafety
+        interval: 100
+        onTriggered: {
+            if (handles.awaitingFrame) {
+                handles.awaitingFrame = false;
+                handles.lw.positionMenu();
+                if (handles.activeGrip && handles.activeGrip.hasPending) {
+                    handles.applyPending();
+                }
+            }
+        }
+    }
+    function applyPending() {
+        const g = activeGrip;
+        if (!g || !g.hasPending || awaitingFrame) {
+            return;
+        }
+        g.hasPending = false;
+        const p = g.pending;
+        const oldW = menu.dragW, oldH = menu.dragH;
+        if (g.sx !== 0) {
+            menu.dragW = Math.round(Tools.clamp(g.startW + g.sx * (p.x - g.start.x) * hFactor, 360, maxW));
+        }
+        if (g.sy !== 0) {
+            menu.dragH = Math.round(Tools.clamp(g.startH + g.sy * (p.y - g.start.y) * vFactor, 300, maxH));
+        }
+        if (menu.dragW !== oldW || menu.dragH !== oldH) {
+            awaitingFrame = true;           // re-centre after this size is drawn
+            frameSafety.restart();
+        }
+    }
+
     component Grip: MouseArea {
         id: g
         property int sx: 0          // -1 left edge, 1 right edge
@@ -86,8 +145,11 @@ Item {
         property real startW
         property real startH
         property point pending
+        property bool hasPending: false
         readonly property int edges: (sx < 0 ? Qt.LeftEdge : sx > 0 ? Qt.RightEdge : 0)
                                      | (sy < 0 ? Qt.TopEdge : sy > 0 ? Qt.BottomEdge : 0)
+        // Centred directions must grow on both sides at once
+        readonly property bool needsSymmetric: (sx !== 0 && handles.hFactor === 2) || (sy !== 0 && handles.vFactor === 2)
 
         hoverEnabled: true
         preventStealing: true
@@ -95,15 +157,19 @@ Item {
                    : sx !== 0 ? Qt.SizeHorCursor : Qt.SizeVerCursor
 
         onPressed: (m) => {
-            if (handles.lw.startSystemResize(edges)) {
+            // Edges that grow one way only (e.g. the top edge above a bottom
+            // taskbar): let the window manager do it - perfectly smooth.
+            if (!needsSymmetric && handles.lw.startSystemResize(edges)) {
                 manual = false;
                 handles.sawSizeChange = false;
                 handles.systemResizing = true;
                 settleTimer.restart();
                 return;
             }
-            // Fallback: resize by hand, at most once per frame
             manual = true;
+            hasPending = false;
+            handles.activeGrip = g;
+            handles.awaitingFrame = false;
             start = mapToGlobal(m.x, m.y);
             startW = handles.menu.baseW;
             startH = handles.menu.baseH;
@@ -115,26 +181,30 @@ Item {
                 return;
             }
             pending = mapToGlobal(m.x, m.y);
-            if (!frameTimer.running) {
-                frameTimer.start();
-            }
+            hasPending = true;
+            handles.applyPending();          // waits its turn if a frame is pending
         }
-        Timer {
-            id: frameTimer
-            interval: 33
-            onTriggered: {
-                const p = g.pending;
-                if (g.sx !== 0) {
-                    handles.menu.dragW = Math.round(Tools.clamp(g.startW + g.sx * (p.x - g.start.x) * handles.hFactor, 360, handles.maxW));
-                }
-                if (g.sy !== 0) {
-                    handles.menu.dragH = Math.round(Tools.clamp(g.startH + g.sy * (p.y - g.start.y) * handles.vFactor, 300, handles.maxH));
-                }
-                handles.lw.positionMenu();
+        function finish() {
+            if (!manual) {
+                return;
             }
+            manual = false;
+            handles.activeGrip = null;
+            handles.awaitingFrame = false;
+            frameSafety.stop();
+            handles.commit();
+            handles.lw.positionMenu();
         }
-        onReleased: if (manual) { frameTimer.stop(); frameTimer.triggered(); handles.commit(); }
-        onCanceled: if (manual) { frameTimer.stop(); handles.commit(); }
+        onReleased: (m) => {
+            if (manual) {
+                pending = mapToGlobal(m.x, m.y);
+                hasPending = true;
+                handles.awaitingFrame = false;
+                handles.applyPending();
+            }
+            finish();
+        }
+        onCanceled: finish()
     }
 
     function commit() {

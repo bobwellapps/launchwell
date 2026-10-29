@@ -135,10 +135,13 @@ The widget itself is plain QML in `package/`, with no compiling needed.
    `package/contents/ui/tools.js` (`build.sh` checks they match).
    The update check compares these numbers, so always raise them.
    (`updateRepo` in the same `tools.js` file is the `owner/repo` it checks.)
-2. Commit, then tag and push: `git tag v1.2.0 && git push --tags`
+2. Commit, then tag and push: `git tag v1.1.2 && git push --tags`
 3. GitHub Actions builds the `.plasmoid` and attaches it to a new release.
 
-## Licence
+## Licence and copyright
+
+Copyright © 2026 bobwellapps
+
 
 - Launchwell is released under the **GNU General Public License v2.0 or later**
   (see [LICENSE](LICENSE)).
@@ -147,3 +150,17 @@ The widget itself is plain QML in `package/`, with no compiling needed.
   **GNU LGPL v3 or later**. See the notice and licence texts in that folder.
 
 Launchwell is an independent project and is not made by or affiliated with KDE.
+
+## Disclaimer
+
+Launchwell is provided **"as is", without warranty of any kind**, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and non-infringement. You use it at your own
+risk. In no event shall the author or contributors be liable for any claim,
+damages, data loss or other liability, whether in an action of contract, tort
+or otherwise, arising from, out of or in connection with Launchwell or its use.
+
+This is in addition to the "NO WARRANTY" sections of the GNU General Public
+License (see [LICENSE](LICENSE)). If something goes wrong, you can always
+remove Launchwell (see [Uninstall](#uninstall)) and switch back to Plasma's
+standard launcher.

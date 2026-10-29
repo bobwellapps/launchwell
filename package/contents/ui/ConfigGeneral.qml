@@ -1,3 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: 2026 bobwellapps
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
@@ -371,6 +375,30 @@ KCM.SimpleKCM {
             text: i18n("Stop skipping version %1", page.cfg_skippedVersion)
             icon.name: "edit-undo"
             onClicked: page.cfg_skippedVersion = ""
+        }
+
+        // ------------------------------------------------ about
+        Item { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("About") }
+
+        QQC2.Label {
+            Kirigami.FormData.label: i18n("Launchwell:")
+            text: i18n("Version %1, © 2026 bobwellapps", Tools.version)
+        }
+        QQC2.Label {
+            Kirigami.FormData.label: i18n("Licence:")
+            text: i18n("GNU GPL v2 or later")
+        }
+        Kirigami.UrlButton {
+            Kirigami.FormData.label: i18n("Website:")
+            url: "https://github.com/bobwellapps/launchwell"
+        }
+        QQC2.Label {
+            Kirigami.FormData.label: i18n("Disclaimer:")
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.8
+            text: i18n("Launchwell is provided \"as is\", without warranty of any kind. You use it at your own risk, and the author accepts no liability for any problems, damage or data loss arising from its use. If anything goes wrong you can remove it and switch back to Plasma's standard launcher at any time.")
         }
     }
 }
