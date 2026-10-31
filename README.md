@@ -7,6 +7,9 @@ brings back the full-colour category icons from Plasma 5, keeps the familiar
 layout (search on top, categories down the side, apps on the right, power
 buttons along the bottom) and lets you rearrange and restyle almost all of it.
 
+<img width="1920" height="1080" alt="currentscreen" src="https://github.com/user-attachments/assets/2be23985-af9d-44a3-bb32-b66b5aaae02d" />
+<img width="1920" height="1080" alt="current2" src="https://github.com/user-attachments/assets/2c33be77-414f-4c00-bc0e-a5c84928020c" />
+
 ## Features
 
 **Icons**
