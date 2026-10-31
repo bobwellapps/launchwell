@@ -543,6 +543,7 @@ FocusScope {
                                 text: name
                                 iconSource: content.categoryIcon(name, model.decoration)
                                 classicAllowed: !content.hasIconOverride(name)
+                                isNew: model.isNewlyInstalled === true
                                 selected: content.sidebarIndex === index
                                 keyboardFocus: sidebar.activeFocus
                                 onActivate: content.sidebarIndex = index

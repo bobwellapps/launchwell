@@ -17,6 +17,7 @@ Item {
     property bool selected: false
     property bool keyboardFocus: false
     property bool classicAllowed: true
+    property bool isNew: false
     readonly property var cfg: Plasmoid.configuration
     readonly property real textScale: Math.max(50, cfg.textScale) / 100
 
@@ -62,6 +63,11 @@ Item {
             maximumLineCount: 1
             textFormat: Text.PlainText
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * item.textScale
+        }
+
+        NewBadge {
+            Layout.alignment: Qt.AlignVCenter
+            active: item.isNew
         }
     }
 

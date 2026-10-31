@@ -66,6 +66,12 @@ PlasmoidItem {
     readonly property string modelConfigKey: [cfg.alphaSort, cfg.showRecentApps, cfg.showRecentDocs, cfg.appNameFormat].join(",")
     onModelConfigKeyChanged: Qt.callLater(refreshModels)
 
+    readonly property bool newAppBadge: cfg.newAppBadge
+    onNewAppBadgeChanged: {
+        Tools.setIfExists(rootModel, "highlightNewlyInstalledApps", newAppBadge);
+        Qt.callLater(refreshModels);
+    }
+
     readonly property bool extendedSearch: cfg.extendedSearch
     onExtendedSearchChanged: applyRunners()
 
@@ -87,6 +93,8 @@ PlasmoidItem {
         Tools.setIfExists(rootModel, "showAllAppsCategorized", false);
         Tools.setIfExists(rootModel, "showTopLevelItems", false);
         Tools.setIfExists(rootModel, "showFavoritesPlaceholder", false);
+        // Plasma tracks newly installed apps (3 days, or until first opened)
+        Tools.setIfExists(rootModel, "highlightNewlyInstalledApps", cfg.newAppBadge);
         Tools.setIfExists(runnerModel, "appletInterface", launcher);
         Tools.setIfExists(runnerModel, "favoritesModel", rootModel.favoritesModel);
         Tools.setIfExists(systemModel, "favoritesModel", rootModel.systemFavoritesModel);
@@ -216,21 +224,6 @@ PlasmoidItem {
         Qt.callLater(positionMenu);
     }
 
-    // The menu's window, for things that need its frame timing (resizing)
-    readonly property var menuWindow: menuDialog
-
-    // Hand an edge drag to the window manager (smooth resizing). False if unsupported.
-    function startSystemResize(edges) {
-        if (!menuDialog.visible || typeof menuDialog.startSystemResize !== "function") {
-            return false;
-        }
-        try {
-            return menuDialog.startSystemResize(edges);
-        } catch (e) {
-            return false;
-        }
-    }
-
     function closeMenu() {
         if (closing) {
             return;
@@ -296,10 +289,11 @@ PlasmoidItem {
     // ---------------------------------------------------------------- positioning
 
     // Where the menu should be, for its current size
-    function menuTargetPosition() {
+    // Where the menu should be for a given content size (default: its current size)
+    function menuTargetPosition(cw, ch) {
         const m = menuDialog.margins;
-        const W = menuContent.width + (m ? m.left + m.right : 0);
-        const H = menuContent.height + (m ? m.top + m.bottom : 0);
+        const W = (cw !== undefined ? cw : menuContent.width) + (m ? m.left + m.right : 0);
+        const H = (ch !== undefined ? ch : menuContent.height) + (m ? m.top + m.bottom : 0);
 
         const loc = Plasmoid.location;
         const sidePanel = loc === PlasmaCore.Types.LeftEdge || loc === PlasmaCore.Types.RightEdge;
@@ -395,7 +389,101 @@ PlasmoidItem {
     readonly property string positionKey: [cfg.menuWidth, cfg.menuHeight, cfg.horizontalPosition,
         cfg.horizontalOffset, cfg.verticalPosition, cfg.verticalGap, cfg.verticalOffset,
         cfg.keepOnScreen, cfg.backgroundStyle].join(",")
-    onPositionKeyChanged: if (menuDialog.visible) Qt.callLater(glideToPosition)
+    // After a drag-resize: jump to the new place in one step (snapPosition);
+    // otherwise slide there.
+    property bool snapPosition: false
+    onPositionKeyChanged: {
+        if (!menuDialog.visible) {
+            snapPosition = false;
+            return;
+        }
+        if (snapPosition) {
+            snapPosition = false;
+            positionMenu();
+            Qt.callLater(positionMenu);     // again once the new size has landed
+        } else {
+            Qt.callLater(glideToPosition);
+        }
+    }
+
+    // ---------------------------------------------------------------- resize outline
+    // A see-through, click-through overlay over the whole screen. While an edge
+    // of the menu is dragged it draws an outline of the new size, exactly where
+    // the menu will end up. The menu itself only changes when the drag ends.
+    // Same outline for the menu to draw on top of itself (the overlay window
+    // sits underneath the menu, so a shrinking outline would be hidden there)
+    property rect resizeOutlineRect          // in screen coordinates, frame included
+    property point resizeContentOrigin       // screen position of the menu's content
+    property bool resizeOutlineShown: false
+
+    function showResizeOutline(w, h) {
+        const r = screenRect;
+        const mm = menuDialog.margins;
+        resizeContentOrigin = Qt.point(menuDialog.x + (mm ? mm.left : 0), menuDialog.y + (mm ? mm.top : 0));
+        resizeOutlineShown = true;
+        resizeOverlay.x = r.x;
+        resizeOverlay.y = r.y;
+        overlayItem.width = r.width;
+        overlayItem.height = r.height;
+        updateResizeOutline(w, h);
+        resizeOverlay.visible = true;
+    }
+    function updateResizeOutline(w, h) {
+        const m = menuDialog.margins;
+        const p = menuTargetPosition(w, h);
+        outlineBox.x = p.x - screenRect.x;
+        outlineBox.y = p.y - screenRect.y;
+        outlineBox.width = w + (m ? m.left + m.right : 0);
+        outlineBox.height = h + (m ? m.top + m.bottom : 0);
+        outlineLabel.text = Math.round(w) + " × " + Math.round(h);
+        resizeOutlineRect = Qt.rect(p.x, p.y, outlineBox.width, outlineBox.height);
+    }
+    function hideResizeOutline() {
+        resizeOutlineShown = false;
+        resizeOverlay.visible = false;
+    }
+
+    PlasmaCore.Dialog {
+        id: resizeOverlay
+        visible: false
+        location: PlasmaCore.Types.Floating
+        // On-screen-display windows never take keyboard focus, so the menu
+        // (which hides when it loses focus) stays open underneath.
+        type: PlasmaCore.Dialog.OnScreenDisplay
+        flags: Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.WindowTransparentForInput | Qt.WindowDoesNotAcceptFocus
+        backgroundHints: PlasmaCore.Dialog.NoBackground
+        hideOnWindowDeactivate: false
+        Component.onCompleted: Tools.setIfExists(resizeOverlay, "outputOnly", true)
+
+        mainItem: Item {
+            id: overlayItem
+            width: 100
+            height: 100
+
+            Rectangle {
+                id: outlineBox
+                radius: Kirigami.Units.cornerRadius !== undefined ? Kirigami.Units.cornerRadius : 6
+                color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.12)
+                border.width: 2
+                border.color: Kirigami.Theme.highlightColor
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: outlineLabel.implicitWidth + Kirigami.Units.gridUnit * 1.5
+                    height: outlineLabel.implicitHeight + Kirigami.Units.smallSpacing * 3
+                    radius: height / 2
+                    color: Qt.rgba(0, 0, 0, 0.7)
+                    Text {
+                        id: outlineLabel
+                        anchors.centerIn: parent
+                        color: "white"
+                        font.bold: true
+                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
+                    }
+                }
+            }
+        }
+    }
 
     // ---------------------------------------------------------------- the popup
 

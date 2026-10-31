@@ -5,11 +5,17 @@
 import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
+import org.kde.kirigami as Kirigami
 import "tools.js" as Tools
 
 // Invisible grips along the menu's edges: drag to resize the menu.
+//
+// While dragging, the menu itself doesn't change: an outline (drawn by main.qml
+// in a see-through overlay) shows the new size, centred just like the menu will
+// be. On release the menu takes that size in one step. Resizing a window live on
+// Wayland always flickers when it also has to move, so this avoids it entirely.
+//
 // The edge against the taskbar has no grip (it stays pinned there).
-// The size is shown live while dragging and saved on release.
 Item {
     id: handles
 
@@ -31,116 +37,31 @@ Item {
     readonly property bool noLeft: pinned && loc === PlasmaCore.Types.LeftEdge
     readonly property bool noRight: pinned && loc === PlasmaCore.Types.RightEdge
 
-    // A centred menu grows on both sides, so the dragged edge moves at
-    // half speed unless we double the change.
+    // A centred menu grows on both sides, so the dragged edge would move at
+    // half speed unless the change is doubled.
     readonly property real hFactor: (!sidePanel && cfg.horizontalPosition <= 1) ? 2 : 1
     readonly property real vFactor: (cfg.verticalPosition === 1 || (pinned && sidePanel)) ? 2 : 1
 
     readonly property real maxW: Math.max(400, lw.screenRect.width - 2 * cfg.verticalGap)
     readonly property real maxH: Math.max(320, lw.screenRect.height - 2 * cfg.verticalGap)
+    readonly property real minW: 360
+    readonly property real minH: 300
 
-    // KWin does the resizing (smooth, one step per frame) when it can; the
-    // hand-made fallback below is only used if the system refuses.
-    property bool systemResizing: false
-    property bool sawSizeChange: false
+    property bool dragging: false
+    property real newW: 0
+    property real newH: 0
 
-    Connections {
-        target: handles.menu
-        function onWidthChanged() { handles.noteSystemResize(); }
-        function onHeightChanged() { handles.noteSystemResize(); }
-    }
-    function noteSystemResize() {
-        if (systemResizing) {
-            sawSizeChange = true;
-            settleTimer.restart();
-        }
-    }
-    // While KWin resizes, the menu gets no real mouse events; the first one
-    // after means the drag is over. Resizing makes Qt send "pretend" hover
-    // events too, but those repeat the press position, so only a pointer that
-    // reports a new position counts. The timer is a backup.
-    property point pressScenePos
-    HoverHandler {
-        enabled: handles.systemResizing && handles.sawSizeChange
-        onPointChanged: {
-            const p = point.scenePosition;
-            if (Math.abs(p.x - handles.pressScenePos.x) > 2 || Math.abs(p.y - handles.pressScenePos.y) > 2) {
-                handles.finishSystemResize();
-            }
-        }
-    }
-    Timer {
-        id: settleTimer
-        interval: 1500
-        onTriggered: handles.finishSystemResize()
-    }
-    function finishSystemResize() {
-        if (!systemResizing) {
+    function finish(apply) {
+        if (!dragging) {
             return;
         }
-        systemResizing = false;
-        settleTimer.stop();
-        if (sawSizeChange) {
-            cfg.menuWidth = Math.round(menu.width);
-            cfg.menuHeight = Math.round(menu.height);
-            lw.glideToPosition();       // slide back to centre / re-pin to the taskbar
-        }
-        sawSizeChange = false;
-        sizeLabelTimer.restart();
-    }
-
-    // ---- Symmetric resizing (centred menu): done by Launchwell, frame-synced.
-    // The window manager's own resize always keeps the opposite edge still, so a
-    // centred menu would grow lopsided. Here the new size is drawn first and the
-    // window is re-centred only once that frame is on screen, so the move and the
-    // resize never arrive out of order (which is what made it flicker before).
-    property var activeGrip: null
-    property bool awaitingFrame: false
-
-    Connections {
-        target: handles.lw.menuWindow
-        function onFrameSwapped() {
-            if (handles.awaitingFrame) {
-                handles.awaitingFrame = false;
-                frameSafety.stop();
-                handles.lw.positionMenu();
-                if (handles.activeGrip && handles.activeGrip.hasPending) {
-                    Qt.callLater(handles.applyPending);
-                }
-            }
-        }
-    }
-    Timer {
-        // in case a frame never comes (e.g. size was clamped and didn't change)
-        id: frameSafety
-        interval: 100
-        onTriggered: {
-            if (handles.awaitingFrame) {
-                handles.awaitingFrame = false;
-                handles.lw.positionMenu();
-                if (handles.activeGrip && handles.activeGrip.hasPending) {
-                    handles.applyPending();
-                }
-            }
-        }
-    }
-    function applyPending() {
-        const g = activeGrip;
-        if (!g || !g.hasPending || awaitingFrame) {
-            return;
-        }
-        g.hasPending = false;
-        const p = g.pending;
-        const oldW = menu.dragW, oldH = menu.dragH;
-        if (g.sx !== 0) {
-            menu.dragW = Math.round(Tools.clamp(g.startW + g.sx * (p.x - g.start.x) * hFactor, 360, maxW));
-        }
-        if (g.sy !== 0) {
-            menu.dragH = Math.round(Tools.clamp(g.startH + g.sy * (p.y - g.start.y) * vFactor, 300, maxH));
-        }
-        if (menu.dragW !== oldW || menu.dragH !== oldH) {
-            awaitingFrame = true;           // re-centre after this size is drawn
-            frameSafety.restart();
+        dragging = false;
+        lw.hideResizeOutline();
+        const w = Math.round(newW), h = Math.round(newH);
+        if (apply && (w !== Math.round(menu.width) || h !== Math.round(menu.height))) {
+            lw.snapPosition = true;       // jump straight to the new place, no glide
+            cfg.menuWidth = w;
+            cfg.menuHeight = h;
         }
     }
 
@@ -148,19 +69,9 @@ Item {
         id: g
         property int sx: 0          // -1 left edge, 1 right edge
         property int sy: 0          // -1 top edge, 1 bottom edge
-        property bool manual: false
         property point start
         property real startW
         property real startH
-        property point pending
-        property bool hasPending: false
-        readonly property int edges: (sx < 0 ? Qt.LeftEdge : sx > 0 ? Qt.RightEdge : 0)
-                                     | (sy < 0 ? Qt.TopEdge : sy > 0 ? Qt.BottomEdge : 0)
-        // Live centring (optional): centred directions grow on both sides while
-        // dragging. Off by default: on Wayland it can't be fully flicker-free,
-        // so normally the window manager resizes and the menu glides back after.
-        readonly property bool needsSymmetric: handles.cfg.liveCentring
-                                               && ((sx !== 0 && handles.hFactor === 2) || (sy !== 0 && handles.vFactor === 2))
 
         hoverEnabled: true
         preventStealing: true
@@ -168,68 +79,72 @@ Item {
                    : sx !== 0 ? Qt.SizeHorCursor : Qt.SizeVerCursor
 
         onPressed: (m) => {
-            // Edges that grow one way only (e.g. the top edge above a bottom
-            // taskbar): let the window manager do it - perfectly smooth.
-            if (!needsSymmetric && handles.lw.startSystemResize(edges)) {
-                manual = false;
-                handles.pressScenePos = mapToItem(null, m.x, m.y);
-                handles.sawSizeChange = false;
-                handles.systemResizing = true;
-                settleTimer.restart();
-                // The window manager owns the drag now; don't keep hold of the
-                // mouse, so the first event after letting go reaches us.
-                m.accepted = false;
-                return;
-            }
-            manual = true;
-            hasPending = false;
-            handles.activeGrip = g;
-            handles.awaitingFrame = false;
             start = mapToGlobal(m.x, m.y);
-            startW = handles.menu.baseW;
-            startH = handles.menu.baseH;
-            handles.menu.dragW = startW;
-            handles.menu.dragH = startH;
+            startW = handles.menu.width;
+            startH = handles.menu.height;
+            handles.newW = startW;
+            handles.newH = startH;
+            handles.dragging = true;
+            handles.lw.showResizeOutline(startW, startH);
         }
         onPositionChanged: (m) => {
-            if (!pressed || !manual) {
+            if (!pressed || !handles.dragging) {
                 return;
             }
-            pending = mapToGlobal(m.x, m.y);
-            hasPending = true;
-            handles.applyPending();          // waits its turn if a frame is pending
-        }
-        function finish() {
-            if (!manual) {
-                return;
+            const p = mapToGlobal(m.x, m.y);
+            if (sx !== 0) {
+                handles.newW = Tools.clamp(startW + sx * (p.x - start.x) * handles.hFactor, handles.minW, handles.maxW);
             }
-            manual = false;
-            handles.activeGrip = null;
-            handles.awaitingFrame = false;
-            frameSafety.stop();
-            handles.commit();
-            handles.lw.positionMenu();
-        }
-        onReleased: (m) => {
-            if (manual) {
-                pending = mapToGlobal(m.x, m.y);
-                hasPending = true;
-                handles.awaitingFrame = false;
-                handles.applyPending();
+            if (sy !== 0) {
+                handles.newH = Tools.clamp(startH + sy * (p.y - start.y) * handles.vFactor, handles.minH, handles.maxH);
             }
-            finish();
+            handles.lw.updateResizeOutline(handles.newW, handles.newH);
         }
-        onCanceled: finish()
+        onReleased: handles.finish(true)
+        onCanceled: handles.finish(false)
     }
 
-    function commit() {
-        if (menu.dragW > 0) {
-            cfg.menuWidth = Math.round(menu.dragW);
-            cfg.menuHeight = Math.round(menu.dragH);
+    // Escape while dragging cancels
+    Keys.onEscapePressed: finish(false)
+
+    // ---- The outline as seen inside the menu (the part the overlay can't show)
+    Item {
+        anchors.fill: parent
+        visible: handles.lw.resizeOutlineShown
+        clip: true
+        z: -1
+
+        // dim the menu so the outline stands out
+        Rectangle {
+            anchors.fill: parent
+            color: Qt.rgba(0, 0, 0, 0.25)
         }
-        menu.dragW = -1;
-        menu.dragH = -1;
-        sizeLabelTimer.restart();
+        Rectangle {
+            x: handles.lw.resizeOutlineRect.x - handles.lw.resizeContentOrigin.x
+            y: handles.lw.resizeOutlineRect.y - handles.lw.resizeContentOrigin.y
+            width: handles.lw.resizeOutlineRect.width
+            height: handles.lw.resizeOutlineRect.height
+            radius: Kirigami.Units.cornerRadius !== undefined ? Kirigami.Units.cornerRadius : 6
+            color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.12)
+            border.width: 2
+            border.color: Kirigami.Theme.highlightColor
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: sizeText.implicitWidth + Kirigami.Units.gridUnit * 1.5
+                height: sizeText.implicitHeight + Kirigami.Units.smallSpacing * 3
+                radius: height / 2
+                color: Qt.rgba(0, 0, 0, 0.7)
+                Text {
+                    id: sizeText
+                    anchors.centerIn: parent
+                    color: "white"
+                    font.bold: true
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
+                    text: Math.round(handles.newW) + " × " + Math.round(handles.newH)
+                }
+            }
+        }
     }
 
     // Edges
@@ -242,25 +157,4 @@ Item {
     Grip { sx: 1;  sy: -1; visible: !handles.noRight && !handles.noTop;    x: parent.width - handles.grip * 2; y: 0; width: handles.grip * 2; height: handles.grip * 2 }
     Grip { sx: -1; sy: 1;  visible: !handles.noLeft && !handles.noBottom;  x: 0; y: parent.height - handles.grip * 2; width: handles.grip * 2; height: handles.grip * 2 }
     Grip { sx: 1;  sy: 1;  visible: !handles.noRight && !handles.noBottom; x: parent.width - handles.grip * 2; y: parent.height - handles.grip * 2; width: handles.grip * 2; height: handles.grip * 2 }
-
-    // Live size readout while dragging (and briefly after)
-    Timer {
-        id: sizeLabelTimer
-        interval: 900
-    }
-    Rectangle {
-        anchors.centerIn: parent
-        visible: handles.menu.dragW > 0 || handles.systemResizing || sizeLabelTimer.running
-        width: sizeText.implicitWidth + 24
-        height: sizeText.implicitHeight + 12
-        radius: height / 2
-        color: Qt.rgba(0, 0, 0, 0.7)
-        Text {
-            id: sizeText
-            anchors.centerIn: parent
-            color: "white"
-            font.bold: true
-            text: Math.round(handles.menu.width) + " × " + Math.round(handles.menu.height)
-        }
-    }
 }

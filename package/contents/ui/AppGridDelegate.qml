@@ -42,12 +42,19 @@ Item {
         spacing: Kirigami.Units.smallSpacing
 
         IconBox {
+            id: gridIcon
             Layout.alignment: Qt.AlignHCenter
             Layout.topMargin: Kirigami.Units.smallSpacing
             source: del.model.decoration
             size: del.cfg.gridIconSize
             mono: del.cfg.appIconStyle === 1
             forceColour: del.cfg.forceColour
+
+            NewBadge {
+                anchors.horizontalCenter: parent.right
+                anchors.verticalCenter: parent.top
+                active: del.model.isNewlyInstalled === true
+            }
         }
 
         PC3.Label {

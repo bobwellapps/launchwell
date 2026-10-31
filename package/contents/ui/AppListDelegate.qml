@@ -121,6 +121,11 @@ Item {
                 font.pointSize: Kirigami.Theme.smallFont.pointSize * del.textScale
             }
         }
+
+        NewBadge {
+            Layout.alignment: Qt.AlignVCenter
+            active: del.model.isNewlyInstalled === true
+        }
     }
 
     MouseArea {

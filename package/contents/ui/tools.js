@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 bobwellapps
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-const version = "1.1.2";
+const version = "1.1.3";
 
 // Turn a QStringList / QVariantList (or anything array-like) into a plain JS array.
 function toArray(v) {

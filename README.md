@@ -7,9 +7,6 @@ brings back the full-colour category icons from Plasma 5, keeps the familiar
 layout (search on top, categories down the side, apps on the right, power
 buttons along the bottom) and lets you rearrange and restyle almost all of it.
 
-<img width="1920" height="1080" alt="currentscreen" src="https://github.com/user-attachments/assets/9af2e741-26b1-4658-ac68-e576a4ac2815" />
-<img width="1920" height="1080" alt="current2" src="https://github.com/user-attachments/assets/cde515ed-0fcb-4754-be68-a1f05304a9fa" />
-
 ## Features
 
 **Icons**
@@ -24,6 +21,7 @@ buttons along the bottom) and lets you rearrange and restyle almost all of it.
 - Category list on the left or right
 - List or grid view, separately for favourites and for applications
 - Clickable A–Z letter headings to jump through All Applications
+- Newly installed apps (and their category) are marked with a symbol: pick dot, square, diamond, star or a "New" label, in any colour
 
 **Size and position**
 - Opens centred just above the taskbar by default

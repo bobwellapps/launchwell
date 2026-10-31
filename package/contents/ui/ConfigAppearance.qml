@@ -26,6 +26,11 @@ KCM.SimpleKCM {
     property string cfg_customBgColor: "#232629"
     property alias cfg_customBgOpacity: bgOpacity.value
     property alias cfg_cornerRadius: cornerSpin.value
+    property alias cfg_newAppBadge: newBadge.checked
+    property alias cfg_newBadgeShape: badgeShape.currentIndex
+    property alias cfg_newBadgeColorMode: badgeColorMode.currentIndex
+    property string cfg_newBadgeColor: "#27ae60"
+    property alias cfg_newBadgeSize: badgeSize.value
     property string cfg_customBgImage: ""
     property alias cfg_bgImageFill: bgFill.currentIndex
     property alias cfg_bgImageBlur: bgBlur.value
@@ -108,6 +113,11 @@ KCM.SimpleKCM {
     property var cfg_customBgColorDefault
     property var cfg_customBgOpacityDefault
     property var cfg_cornerRadiusDefault
+    property var cfg_newAppBadgeDefault
+    property var cfg_newBadgeShapeDefault
+    property var cfg_newBadgeColorModeDefault
+    property var cfg_newBadgeColorDefault
+    property var cfg_newBadgeSizeDefault
     property var cfg_customBgImageDefault
     property var cfg_bgImageFillDefault
     property var cfg_bgImageBlurDefault
@@ -140,8 +150,6 @@ KCM.SimpleKCM {
     property var cfg_menuHeightDefault
     property var cfg_dragResize
     property var cfg_dragResizeDefault
-    property var cfg_liveCentring
-    property var cfg_liveCentringDefault
     property var cfg_horizontalPosition
     property var cfg_horizontalPositionDefault
     property var cfg_horizontalOffset
@@ -181,6 +189,10 @@ KCM.SimpleKCM {
 
 
 
+
+
+
+
     Kirigami.FormLayout {
         // ------------------------------------------------ icons
         Item { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Icons") }
@@ -188,7 +200,7 @@ KCM.SimpleKCM {
         QQC2.ComboBox {
             id: catStyle
             Kirigami.FormData.label: i18n("Category icons:")
-            model: [i18n("Classic colour (Plasma 5 / Kubuntu 24.04)"), i18n("Mono"), i18n("Colour from your icon theme")]
+            model: [i18n("Classic Colour"), i18n("New Symbolic"), i18n("Colour from your icon theme")]
         }
         QQC2.ComboBox {
             id: appStyle
@@ -204,7 +216,7 @@ KCM.SimpleKCM {
             wrapMode: Text.Wrap
             font: Kirigami.Theme.smallFont
             opacity: 0.7
-            text: i18n("Classic colour uses the Plasma 5 Breeze category icons bundled with Launchwell. For other icons, Breeze uses mono drawings at 16–22 px; with this option on they are drawn from the 48 px artwork and scaled down. Right-click any category in the menu to give it a different icon.")
+            text: i18n("Classic Colour uses the Plasma 5 Breeze category icons bundled with Launchwell. For other icons, Breeze uses mono drawings at 16–22 px; with this option on they are drawn from the 48 px artwork and scaled down. Right-click any category in the menu to give it a different icon.")
         }
         QQC2.Button {
             text: i18n("Reset all custom category icons")
@@ -226,6 +238,101 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Text size:")
             QQC2.Slider { id: textScale; from: 70; to: 160; stepSize: 5; Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
             QQC2.Label { text: textScale.value + "%" }
+        }
+
+        // ------------------------------------------------ new apps
+        Item { Kirigami.FormData.isSection: true; Kirigami.FormData.label: i18n("Newly installed apps") }
+
+        QQC2.CheckBox {
+            id: newBadge
+            Kirigami.FormData.label: i18n("Symbol:")
+            text: i18n("Mark new apps and their category")
+        }
+        QQC2.ComboBox {
+            id: badgeShape
+            Kirigami.FormData.label: i18n("Shape:")
+            enabled: newBadge.checked
+            model: [i18n("Dot"), i18n("Square"), i18n("Diamond"), i18n("Star"), i18n("\"New\" label")]
+        }
+        RowLayout {
+            Kirigami.FormData.label: i18n("Colour:")
+            enabled: newBadge.checked
+            QQC2.ComboBox {
+                id: badgeColorMode
+                model: [i18n("Theme accent colour"), i18n("Custom colour")]
+            }
+            KQControls.ColorButton {
+                visible: badgeColorMode.currentIndex === 1
+                color: page.cfg_newBadgeColor
+                onColorChanged: page.cfg_newBadgeColor = color.toString()
+            }
+        }
+        QQC2.SpinBox {
+            id: badgeSize
+            Kirigami.FormData.label: i18n("Size:")
+            enabled: newBadge.checked
+            from: 5; to: 24
+        }
+        RowLayout {
+            Kirigami.FormData.label: i18n("Preview:")
+            enabled: newBadge.checked
+            spacing: Kirigami.Units.largeSpacing
+            Item {
+                implicitWidth: previewRow.implicitWidth
+                implicitHeight: previewRow.implicitHeight
+                RowLayout {
+                    id: previewRow
+                    spacing: Kirigami.Units.smallSpacing
+                    Kirigami.Icon { source: "applications-internet"; implicitWidth: Kirigami.Units.iconSizes.medium; implicitHeight: implicitWidth }
+                    QQC2.Label { text: i18n("Example app") }
+                    // live preview using the values on this page (not yet applied)
+                    Item {
+                        readonly property int shape: badgeShape.currentIndex
+                        readonly property real s: badgeSize.value
+                        readonly property color tint: badgeColorMode.currentIndex === 1 ? page.cfg_newBadgeColor : Kirigami.Theme.highlightColor
+                        implicitWidth: shape === 4 ? pvLabel.implicitWidth + s : s * 1.4
+                        implicitHeight: shape === 4 ? pvLabel.implicitHeight + s * 0.3 : s * 1.4
+                        Rectangle {
+                            anchors.centerIn: parent
+                            visible: parent.shape <= 2
+                            width: parent.shape === 2 ? parent.s * 0.75 : parent.s
+                            height: width
+                            radius: parent.shape === 0 ? width / 2 : (parent.shape === 1 ? width * 0.15 : 0)
+                            rotation: parent.shape === 2 ? 45 : 0
+                            color: parent.tint
+                            antialiasing: true
+                        }
+                        Text {
+                            anchors.centerIn: parent
+                            visible: parent.shape === 3
+                            text: "★"
+                            color: parent.tint
+                            font.pixelSize: parent.s * 1.35
+                        }
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: parent.shape === 4
+                            radius: height / 2
+                            color: parent.tint
+                            Text {
+                                id: pvLabel
+                                anchors.centerIn: parent
+                                text: i18n("New")
+                                color: (parent.color.r * 0.299 + parent.color.g * 0.587 + parent.color.b * 0.114) > 0.6 ? "black" : "white"
+                                font.bold: true
+                                font.pixelSize: Math.max(8, parent.parent.s * 0.9)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        QQC2.Label {
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Plasma counts an app as new for 3 days after it's installed, or until you first open it.")
         }
 
         // ------------------------------------------------ background

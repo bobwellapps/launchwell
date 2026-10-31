@@ -104,6 +104,16 @@ KCM.SimpleKCM {
     property var cfg_customBgOpacityDefault
     property var cfg_cornerRadius
     property var cfg_cornerRadiusDefault
+    property var cfg_newAppBadge
+    property var cfg_newAppBadgeDefault
+    property var cfg_newBadgeShape
+    property var cfg_newBadgeShapeDefault
+    property var cfg_newBadgeColorMode
+    property var cfg_newBadgeColorModeDefault
+    property var cfg_newBadgeColor
+    property var cfg_newBadgeColorDefault
+    property var cfg_newBadgeSize
+    property var cfg_newBadgeSizeDefault
     property var cfg_customBgImage
     property var cfg_customBgImageDefault
     property var cfg_bgImageFill
@@ -140,8 +150,6 @@ KCM.SimpleKCM {
     property var cfg_menuHeightDefault
     property var cfg_dragResize
     property var cfg_dragResizeDefault
-    property var cfg_liveCentring
-    property var cfg_liveCentringDefault
     property var cfg_horizontalPosition
     property var cfg_horizontalPositionDefault
     property var cfg_horizontalOffset
@@ -157,6 +165,10 @@ KCM.SimpleKCM {
     property var cfg_windowType
     property var cfg_windowTypeDefault
     // --- end
+
+
+
+
 
 
 
@@ -204,8 +216,8 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Icon:")
             QQC2.ComboBox {
                 id: buttonStyle
-                model: [i18n("Classic colour Plasma logo (Kubuntu 24.04)"),
-                        i18n("New Plasma 6 logo (like the stock launcher)"),
+                model: [i18n("Classic Colour"),
+                        i18n("New Symbolic"),
                         i18n("Custom icon")]
             }
             IconBox {
