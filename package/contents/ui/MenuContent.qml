@@ -667,13 +667,13 @@ FocusScope {
                 visible: content.lw.updateAvailable
                 icon.name: "system-software-update"
                 text: i18n("Update %1", content.lw.updateVersion)
-                PC3.ToolTip.text: i18n("Launchwell %1 is available. Click to open the download page; right-click for options.", content.lw.updateVersion)
-                PC3.ToolTip.visible: hovered
+                PC3.ToolTip.text: i18n("Launchwell %1 is available. Click to choose how to update.", content.lw.updateVersion)
+                PC3.ToolTip.visible: hovered && !updateMenu.visible
                 PC3.ToolTip.delay: Kirigami.Units.toolTipDelay
-                onClicked: content.lw.openUpdatePage()
+                onClicked: updateMenu.popup(updateButton, 0, updateButton.height)
                 TapHandler {
                     acceptedButtons: Qt.RightButton
-                    onTapped: updateMenu.popup(updateButton, updateButton.width / 2, updateButton.height / 2)
+                    onTapped: updateMenu.popup(updateButton, 0, updateButton.height)
                 }
             }
 
@@ -848,10 +848,16 @@ FocusScope {
     PC3.Menu {
         id: updateMenu
         PC3.MenuItem {
-            text: i18n("Open download page")
+            text: i18n("Update with Discover (installed from the KDE Store)")
+            icon.name: "plasmadiscover"
+            onTriggered: content.lw.openDiscoverUpdates()
+        }
+        PC3.MenuItem {
+            text: i18n("Download from GitHub (installed from a file)")
             icon.name: "internet-services"
             onTriggered: content.lw.openUpdatePage()
         }
+        PC3.MenuSeparator {}
         PC3.MenuItem {
             text: i18n("Skip this version")
             icon.name: "dialog-cancel"

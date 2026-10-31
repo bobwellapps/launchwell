@@ -13,6 +13,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.private.kicker as Kicker
+import org.kde.plasma.plasma5support as P5Support
 import "tools.js" as Tools
 
 PlasmoidItem {
@@ -189,6 +190,18 @@ PlasmoidItem {
             Qt.openUrlExternally(updateUrl);
             closeMenuAfterLaunch();
         }
+    }
+
+    // For copies installed from the KDE Store: Discover's Updates page
+    P5Support.DataSource {
+        id: commandRunner
+        engine: "executable"
+        connectedSources: []
+        onNewData: (source, data) => disconnectSource(source)
+    }
+    function openDiscoverUpdates() {
+        commandRunner.connectSource("plasma-discover --mode update");
+        closeMenuAfterLaunch();
     }
 
     // ---------------------------------------------------------------- open / close
