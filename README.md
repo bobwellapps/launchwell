@@ -1,6 +1,6 @@
 # Launchwell
 
-**A Kickoff-style application launcher for KDE Plasma 6, with colour icons back and lots to tweak.**
+**Kickoff-style launcher with colour icons, a centred popup option (or keep it original) and many tweakable settings. Change menu size, add your own background, movable search and power options, customise your newly installed application notifications, menu animations, new or original icons and more..**
 
 Since Plasma 6.2, the stock launcher draws its category icons in mono. Launchwell
 brings back the full-colour category icons from Plasma 5, keeps the familiar
