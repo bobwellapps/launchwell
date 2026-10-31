@@ -5,6 +5,7 @@
 - Changed: resizing by dragging now shows an outline of the new size while you drag (centred, like the menu), and the menu changes to it when you let go. Works for growing and shrinking. No more flicker or jumping. Esc cancels
 - Removed: the "keep centred while dragging" option, which the outline replaces
 - Changed: icon choices renamed to "Classic Colour" and "New Symbolic" (panel button and category icons)
+- Changed: the in-menu Update button now asks how to update: with Discover (KDE Store installs) or from GitHub (file installs)
 - New: a symbol marks newly installed apps and the category they are in (for 3 days, or until first opened). Choose its shape (dot, square, diamond, star or "New" label), colour and size under Appearance
 
 ## 1.1.2
