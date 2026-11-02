@@ -1,23 +1,19 @@
 # Launchwell
 
-**Kickoff-style launcher with colour icons, a centred popup option (or keep it original) and many tweakable settings. Change menu size, add your own background, movable search and power options, customise your newly installed application notifications, menu animations, new or original icons and more..**
+**A Kickoff-style application launcher for KDE Plasma 6, with colour icons back and lots to tweak.**
 
 Since Plasma 6.2, the stock launcher draws its category icons in mono. Launchwell
 brings back the full-colour category icons from Plasma 5, keeps the familiar
 layout (search on top, categories down the side, apps on the right, power
 buttons along the bottom) and lets you rearrange and restyle almost all of it.
 
-<img width="1920" height="1080" alt="1" src="https://github.com/user-attachments/assets/c8e40c97-3482-47c4-b8cd-37a2244ca2fd" />
-<img width="1920" height="1080" alt="2" src="https://github.com/user-attachments/assets/b37c6851-db68-41bf-a6ff-24afac8b5454" />
-<img width="1920" height="1080" alt="3" src="https://github.com/user-attachments/assets/a7dc0b18-7968-4b3b-b93b-5aad28ef06aa" />
-
 ## Features
 
 **Icons**
 - Classic Plasma 5 colour category icons, bundled, so they work with any icon theme
-- Mono icons as an option, separately for categories and for apps
+- New Symbolic (mono) icons as an option, separately for categories and for apps
 - Choose your own icon for any category (right-click it)
-- Panel button: classic colour logo, the new Plasma 6 logo, or any icon you like
+- Panel button: Classic Colour, New Symbolic, or any icon you like
 
 **Layout**
 - Search bar at the top, at the bottom, or in the footer beside the settings or power buttons
@@ -30,7 +26,7 @@ buttons along the bottom) and lets you rearrange and restyle almost all of it.
 **Size and position**
 - Opens centred just above the taskbar by default
 - Or at the launcher button, at the screen edge, screen centre or top, with pixel nudges
-- Resize by dragging the menu's top, sides or corners, or type an exact size
+- Resize by dragging the menu's top, sides or corners (an outline shows the new size), or type an exact size
 
 **Look**
 - Plasma theme background (translucent or solid), a custom colour, or your own picture
@@ -91,7 +87,8 @@ either use the command above or remove the old version first.)
 - **Installed from a GitHub download:** Launchwell checks this repository's
   releases once a day. When there's a newer version, an **Update** button
   appears in the menu's footer and a small dot appears on the panel button.
-  Click it to open the download page; right-click it to skip that version.
+  Click it to update with Discover (store installs) or download from GitHub
+  (file installs), or to skip that version.
   Nothing is downloaded or installed automatically. Turn it off under
   Configure → General → Updates.
 
@@ -110,7 +107,7 @@ in the menu:
 | Page | What's there |
 |---|---|
 | General | Panel button icon and label, layout, where the search bar and buttons go, behaviour, which power buttons to show |
-| Appearance | Colour or mono icons, icon and text sizes, spacing, background style, colour or picture |
+| Appearance | Classic Colour or New Symbolic icons, new-app symbol, icon and text sizes, spacing, background style, colour or picture |
 | Animations | Opening/closing effects, category switching, cascade, hover, presets |
 | Position & Size | Width and height, drag-to-resize, where the menu opens, nudges |
 
@@ -140,7 +137,8 @@ The widget itself is plain QML in `package/`, with no compiling needed.
    `package/contents/ui/tools.js` (`build.sh` checks they match).
    The update check compares these numbers, so always raise them.
    (`updateRepo` in the same `tools.js` file is the `owner/repo` it checks.)
-2. Commit, then tag and push: `git tag v1.1.2 && git push --tags`
+   Add the changes to `CHANGELOG.md` too.
+2. Commit, then tag and push: `git tag v1.1.5 && git push --tags`
 3. GitHub Actions builds the `.plasmoid` and attaches it to a new release.
 
 ## Licence and copyright

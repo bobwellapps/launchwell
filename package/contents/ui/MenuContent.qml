@@ -322,8 +322,8 @@ FocusScope {
         if (entries.length === 0) {
             return;
         }
-        itemMenu.entries = entries;
-        itemMenu.popup(item, x, y);
+        itemMenu.fill(entries);
+        showMenu(itemMenu, item, x, y);
     }
 
     // Typing anywhere goes to the search box; arrows move between panes.
@@ -667,13 +667,15 @@ FocusScope {
                 visible: content.lw.updateAvailable
                 icon.name: "system-software-update"
                 text: i18n("Update %1", content.lw.updateVersion)
-                PC3.ToolTip.text: i18n("Launchwell %1 is available. Click to choose how to update.", content.lw.updateVersion)
-                PC3.ToolTip.visible: hovered && !updateMenu.visible
-                PC3.ToolTip.delay: Kirigami.Units.toolTipDelay
-                onClicked: updateMenu.popup(updateButton, 0, updateButton.height)
+                onClicked: { updateMenu.build(); content.showMenu(updateMenu, updateButton, 0, updateButton.height); }
                 TapHandler {
                     acceptedButtons: Qt.RightButton
-                    onTapped: updateMenu.popup(updateButton, 0, updateButton.height)
+                    onTapped: { updateMenu.build(); content.showMenu(updateMenu, updateButton, 0, updateButton.height); }
+                }
+                PlasmaCore.ToolTipArea {
+                    anchors.fill: parent
+                    mainText: i18n("Launchwell %1 is available", content.lw.updateVersion)
+                    subText: i18n("Click to choose how to update")
                 }
             }
 
@@ -746,9 +748,11 @@ FocusScope {
         anchors.centerIn: parent
         visible: content.settingsShown
         icon.name: "configure"
-        PC3.ToolTip.text: i18n("Configure Launchwell…")
-        PC3.ToolTip.visible: hovered
-        PC3.ToolTip.delay: Kirigami.Units.toolTipDelay
+        // Plasma tooltip: its own window, so it is never cut off by the menu's edge
+        PlasmaCore.ToolTipArea {
+            anchors.fill: parent
+            mainText: i18n("Configure Launchwell…")
+        }
         onClicked: {
             const a = Plasmoid.internalAction("configure");
             if (a) {
@@ -781,9 +785,11 @@ FocusScope {
                 readonly property string fid: model.favoriteId || ""
                 visible: !model.isSeparator && content.powerList.indexOf(fid) !== -1
                 text: model.display || ""
-                PC3.ToolTip.text: text
-                PC3.ToolTip.visible: hovered && !(content.cfg.powerButtonText && content.powerPos !== 4)
-                PC3.ToolTip.delay: Kirigami.Units.toolTipDelay
+                PlasmaCore.ToolTipArea {
+                    anchors.fill: parent
+                    active: !(content.cfg.powerButtonText && content.powerPos !== 4)
+                    mainText: pb.text
+                }
 
                 contentItem: RowLayout {
                     spacing: Kirigami.Units.smallSpacing
@@ -827,63 +833,71 @@ FocusScope {
 
     // ---------------------------------------------------------------- menus
 
-    PC3.Menu {
+    // Right-click menus are real menu windows (like Plasma's own launcher):
+    // never cut off by the launcher's edges, and a click anywhere else closes them.
+    Component {
+        id: menuItemComponent
+        PlasmaExtras.MenuItem {
+            property var run: null
+            onClicked: if (run) run()
+        }
+    }
+    function addItem(menu, text, icon, run, enabled) {
+        const item = menuItemComponent.createObject(menu, {
+            text: text,
+            icon: icon || "",
+            enabled: enabled === undefined ? true : enabled,
+            run: run
+        });
+        menu.addMenuItem(item);
+        return item;
+    }
+    function addSeparator(menu) {
+        const item = menuItemComponent.createObject(menu, { separator: true });
+        menu.addMenuItem(item);
+    }
+    function showMenu(menu, item, x, y) {
+        menu.visualParent = item;
+        menu.open(x, y);
+    }
+
+    PlasmaExtras.Menu {
         id: itemMenu
-        property var entries: []
-
-        Instantiator {
-            model: itemMenu.entries
-            delegate: PC3.MenuItem {
-                required property var modelData
-                text: modelData.text
-                icon.name: modelData.icon || ""
-                enabled: !modelData.disabled
-                onTriggered: modelData.run()
+        placement: PlasmaExtras.Menu.FloatingPopup
+        function fill(entries) {
+            clearMenuItems();
+            for (const e of entries) {
+                content.addItem(itemMenu, e.text, e.icon, e.run, !e.disabled);
             }
-            onObjectAdded: (index, object) => itemMenu.insertItem(index, object)
-            onObjectRemoved: (index, object) => itemMenu.removeItem(object)
         }
     }
 
-    PC3.Menu {
+    PlasmaExtras.Menu {
         id: updateMenu
-        PC3.MenuItem {
-            text: i18n("Update with Discover (installed from the KDE Store)")
-            icon.name: "plasmadiscover"
-            onTriggered: content.lw.openDiscoverUpdates()
-        }
-        PC3.MenuItem {
-            text: i18n("Download from GitHub (installed from a file)")
-            icon.name: "internet-services"
-            onTriggered: content.lw.openUpdatePage()
-        }
-        PC3.MenuSeparator {}
-        PC3.MenuItem {
-            text: i18n("Skip this version")
-            icon.name: "dialog-cancel"
-            onTriggered: content.cfg.skippedVersion = content.lw.updateVersion
+        placement: PlasmaExtras.Menu.FloatingPopup
+        function build() {
+            clearMenuItems();
+            content.addItem(updateMenu, i18n("Update with Discover (installed from the KDE Store)"), "plasmadiscover",
+                            () => content.lw.openDiscoverUpdates());
+            content.addItem(updateMenu, i18n("Download from GitHub (installed from a file)"), "internet-services",
+                            () => content.lw.openUpdatePage());
+            content.addSeparator(updateMenu);
+            content.addItem(updateMenu, i18n("Skip this version"), "dialog-cancel",
+                            () => content.cfg.skippedVersion = content.lw.updateVersion);
         }
     }
 
-    PC3.Menu {
+    PlasmaExtras.Menu {
         id: catMenu
+        placement: PlasmaExtras.Menu.FloatingPopup
         property string key: ""
-
         function openFor(k, item, x, y) {
             key = k;
-            popup(item, x, y);
-        }
-
-        PC3.MenuItem {
-            text: i18n("Choose Icon…")
-            icon.name: "document-edit"
-            onTriggered: content.pickIcon(catMenu.key)
-        }
-        PC3.MenuItem {
-            text: i18n("Reset Icon")
-            icon.name: "edit-undo"
-            enabled: content.hasIconOverride(catMenu.key)
-            onTriggered: content.setCategoryIcon(catMenu.key, "")
+            clearMenuItems();
+            content.addItem(catMenu, i18n("Choose Icon…"), "document-edit", () => content.pickIcon(k));
+            content.addItem(catMenu, i18n("Reset Icon"), "edit-undo", () => content.setCategoryIcon(k, ""),
+                            content.hasIconOverride(k));
+            content.showMenu(catMenu, item, x, y);
         }
     }
 
