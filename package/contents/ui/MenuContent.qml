@@ -823,7 +823,10 @@ FocusScope {
               : headerSearchSlot
         anchors.fill: parent
         focus: true
-        onTextChanged: content.lw.searchText = text
+        onTextChanged: {
+            content.lw.searchText = text;
+            searchView.typed();     // typing hands the selection back to the top result
+        }
         Keys.onDownPressed: if (!content.searchBelow) content.currentAppView().focusFirst()
         Keys.onUpPressed: if (content.searchBelow) content.currentAppView().focusFirst()
         Keys.onReturnPressed: content.currentAppView().triggerCurrentOrFirst()

@@ -23,6 +23,11 @@ Item {
                                      x === undefined ? width / 2 : x,
                                      y === undefined ? height / 2 : y);
     }
+    function pointerOver() {
+        if (owner) {
+            owner.pointerOver(index, mouse, mouse.mouseX, mouse.mouseY);
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -76,11 +81,10 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onContainsMouseChanged: {
-            if (containsMouse && del.GridView.view) {
-                del.GridView.view.currentIndex = del.index;
-            }
-        }
+        // The view decides whether the pointer really moved (cells rebuilt under a
+        // resting pointer don't count) before it selects this cell.
+        onContainsMouseChanged: if (containsMouse) del.pointerOver()
+        onPositionChanged: del.pointerOver()
         onClicked: (ev) => {
             if (ev.button === Qt.RightButton) {
                 del.openMenu(ev.x, ev.y);
