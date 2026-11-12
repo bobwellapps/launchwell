@@ -29,6 +29,11 @@ PlasmoidItem {
     readonly property bool menuOpen: menuDialog.visible && !closing
 
     Plasmoid.icon: cfg.icon
+    // The menu is our own window, so an auto-hiding or "dodge windows" panel doesn't
+    // know it's open. A panel stays shown while one of its widgets needs attention:
+    // ask for it while the menu is open, so the panel comes up with it (also when the
+    // menu opens from the keyboard shortcut) and stays until it closes.
+    Plasmoid.status: menuOpen ? PlasmaCore.Types.RequiresAttentionStatus : PlasmaCore.Types.ActiveStatus
     // The panel button IS the widget (like "Show Desktop"); the menu is our own window.
     preferredRepresentation: fullRepresentation
     activationTogglesExpanded: false
