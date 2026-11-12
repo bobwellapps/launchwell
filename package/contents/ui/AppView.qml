@@ -51,12 +51,14 @@ FocusScope {
         if (!view || count === 0) {
             return;
         }
+        keyboardLeads();
         if (view.currentIndex < 0) {
             view.currentIndex = 0;
         }
         view.forceActiveFocus();
     }
     function resetView() {
+        keyboardLeads();
         if (view) {
             view.currentIndex = -1;
             view.positionViewAtBeginning();
@@ -66,6 +68,45 @@ FocusScope {
         if (view && !view.activeFocus) {
             view.currentIndex = count > 0 ? 0 : -1;
             view.positionViewAtBeginning();
+        }
+    }
+    // Typing: the top row is selected again and the mouse waits until it moves.
+    function typed() {
+        keyboardLeads();
+        selectFirst();
+    }
+
+    // ------------------------------------------------ pointer vs. keyboard
+    // Rows that turn up under a resting pointer (search results rebuilt on every
+    // keystroke, a list scrolled with the arrow keys, the menu opening under the
+    // cursor) must not take the selection. After keyboard use the pointer selects
+    // again only once it has really moved, further than about 1.5 mm, so a mouse
+    // nudged while typing doesn't count.
+    property bool pointerMoved: false
+    property var pointerAnchor: null    // where the pointer was first seen since then
+    // Screen.pixelDensity is in logical pixels per mm (0 if the screen reports no size)
+    readonly property real pointerDeadband: Tools.clamp(Screen.pixelDensity > 0.5 ? Screen.pixelDensity * 1.5
+                                                                                   : Kirigami.Units.gridUnit / 4, 3, 16)
+
+    function keyboardLeads() {
+        pointerMoved = false;
+        pointerAnchor = null;
+    }
+    // A row reports the pointer entering or moving over it (x, y in item's coordinates).
+    function pointerOver(row, item, x, y) {
+        if (!pointerMoved) {
+            const p = item.mapToItem(null, x, y);
+            if (!pointerAnchor) {
+                pointerAnchor = p;
+                return;
+            }
+            if (Math.hypot(p.x - pointerAnchor.x, p.y - pointerAnchor.y) <= pointerDeadband) {
+                return;
+            }
+            pointerMoved = true;
+        }
+        if (view) {
+            view.currentIndex = row;
         }
     }
 
@@ -114,12 +155,18 @@ FocusScope {
         }
     }
 
-    onCountChanged: if (autoSelectFirst) selectFirst()
+    onCountChanged: if (autoSelectFirst && !pointerMoved) selectFirst()
     onModelChanged: {
         letterPickerOpen = false;
         autoSelectFirst ? selectFirst() : resetView();
     }
-    onVisibleChanged: if (!visible) letterPickerOpen = false
+    onVisibleChanged: {
+        if (visible) {
+            keyboardLeads();    // e.g. back from search: the view reappears under a resting pointer
+        } else {
+            letterPickerOpen = false;
+        }
+    }
 
     Loader {
         id: loader
@@ -221,7 +268,9 @@ FocusScope {
             Keys.onReturnPressed: appView.trigger(currentIndex)
             Keys.onEnterPressed: appView.trigger(currentIndex)
             Keys.onMenuPressed: if (currentItem) currentItem.openMenu()
+            Keys.onPressed: appView.keyboardLeads()     // arrow keys etc.; the view still handles them
             Keys.onUpPressed: {
+                appView.keyboardLeads();
                 if (currentIndex <= 0) {
                     appView.leaveTop();
                 } else {
@@ -272,7 +321,9 @@ FocusScope {
             Keys.onReturnPressed: appView.trigger(currentIndex)
             Keys.onEnterPressed: appView.trigger(currentIndex)
             Keys.onMenuPressed: if (currentItem) currentItem.openMenu()
+            Keys.onPressed: appView.keyboardLeads()     // arrow keys etc.; the view still handles them
             Keys.onUpPressed: {
+                appView.keyboardLeads();
                 if (currentIndex < columns) {
                     appView.leaveTop();
                 } else {
